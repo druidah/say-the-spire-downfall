@@ -11,6 +11,8 @@ import sayTheSpire.localization.LocalizationContext;
 import sayTheSpire.utils.MapUtils;
 import sayTheSpire.utils.OutputUtils;
 import sayTheSpire.Output;
+import downfall.patches.EvilModeCharacterSelect;
+import com.evacipated.cardcrawl.modthespire.Loader;
 
 /**
  * Represents a room node from the base game.
@@ -19,6 +21,7 @@ public class BaseRoomNode extends VirtualMapNode {
 
     private MapRoomNode node;
     private LocalizationContext localization;
+    public static boolean downfall = Loader.isModLoaded("downfall");
 
     public BaseRoomNode(MapRoomNode node) {
         this(-1, -1);
@@ -39,7 +42,8 @@ public class BaseRoomNode extends VirtualMapNode {
         }
 
         VirtualMap map = this.getMap();
-        int targetY = this.getY() + 1;
+        int targetY = downfall && EvilModeCharacterSelect.evilMode ? this.getY() - 1 : this.getY() + 1;
+
         if (MapUtils.isBossAvailable(this)) {
             BaseBossNode bossNode = new BaseBossNode(-1, targetY, MapUtils.getLocalizedBossName());
             edges.add(new BaseMapEdge(this, bossNode));

@@ -46,6 +46,10 @@ public class MapUtils {
     }
 
     public static Boolean isBossAvailable(BaseRoomNode node) {
+        if (sayTheSpire.map.BaseMap.downfall) {
+            return node.getY() == -1;
+        }
         return node.getY() == AbstractDungeon.map.size() - 1;
     }
+
 }

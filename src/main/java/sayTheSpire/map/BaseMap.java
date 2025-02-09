@@ -1,19 +1,15 @@
 package sayTheSpire.map;
 
 import java.util.ArrayList;
-import java.util.List;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.map.MapRoomNode;
-import sayTheSpire.localization.LocalizationContext;
-import sayTheSpire.utils.MapUtils;
-import sayTheSpire.Output;
 import downfall.patches.EvilModeCharacterSelect;
 import com.evacipated.cardcrawl.modthespire.Loader;
+import sayTheSpire.utils.MapUtils;
 
 public class BaseMap extends VirtualMap {
 
-    // Each id should be unique to the map
     private String id;
     public static boolean downfall = Loader.isModLoaded("downfall");
 
@@ -26,58 +22,50 @@ public class BaseMap extends VirtualMap {
     }
 
     private static ArrayList<ArrayList<MapRoomNode>> getDungeonMap() {
+        if (downfall && EvilModeCharacterSelect.evilMode) {
+            return AbstractDungeon.map; // Downfall térkép
+        }
         return CardCrawlGame.dungeon.getMap();
     }
 
     public VirtualMapNode getNodeFromObject(Object obj) {
-        if (obj == null)
+        if (obj == null || !(obj instanceof MapRoomNode)) {
             return null;
-        if (!(obj instanceof MapRoomNode))
-            return null;
+        }
         return new BaseRoomNode((MapRoomNode) obj);
     }
 
     public VirtualMapEdge getParentEdge(VirtualMapNode node) {
         if (node == null)
             return null;
+
         for (int y = node.getY(); y > -1; y--) {
             for (int x = 0; x <= 6; x++) {
                 VirtualMapNode source = this.getNodeAt(x, y);
                 if (source == null)
                     continue;
-                if ((source.getIsVisited() && source.isConnectedTo(node)) || (source instanceof BaseStartNode))
+
+                if ((source.getIsVisited() && source.isConnectedTo(node)) || (source instanceof BaseStartNode)) {
                     return new BaseMapEdge(node, source);
+                }
             }
         }
         return null;
     }
 
     public VirtualMapNode getNodeAt(int x, int y) {
-        // There is a chance the map just isn't actually loaded yet
         ArrayList<ArrayList<MapRoomNode>> map = getDungeonMap();
         if (map == null)
             return null;
 
-        // This node isn't on the map itself but you start below the map
         if (y == -1)
             return new BaseStartNode();
-
         if (y >= map.size())
             return null;
 
-        if (downfall && EvilModeCharacterSelect.evilMode) {
-            for (MapRoomNode node : map.get(AbstractDungeon.currMapNode.y - 1)) {
-                // If the node does not have edges it should not be on the map
-                if (node.x == x && node.y == y && node.hasEdges()) {
-                    return new BaseRoomNode(node);
-                }
-            }
-        } else {
-            for (MapRoomNode node : map.get(y)) {
-                // If the node does not have edges it should not be on the map
-                if (node.x == x && node.y == y && node.hasEdges()) {
-                    return new BaseRoomNode(node);
-                }
+        for (MapRoomNode node : map.get(y)) {
+            if (node.x == x && node.y == y && node.hasEdges()) {
+                return new BaseRoomNode(node);
             }
         }
         return null;
@@ -85,10 +73,17 @@ public class BaseMap extends VirtualMap {
 
     public VirtualMapNode getPlayerNode() {
         MapRoomNode node = MapUtils.getCurrentNode();
+
+        if (Loader.isModLoaded("downfall") && EvilModeCharacterSelect.evilMode) {
+            if (node == null || node.x < 0 || node.x > 6) {
+                return new BaseStartNode(AbstractDungeon.currMapNode.y);
+            }
+            return this.getNodeAt(node.x, node.y);
+        }
+
         if (node == null || node.x < 0 || node.x > 6) {
             return new BaseStartNode();
         }
         return this.getNodeAt(node.x, node.y);
     }
-
 }
